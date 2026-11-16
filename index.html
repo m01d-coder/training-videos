@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>翰林國小線上研習回放影片</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#fff; --ink:#1f2328; --muted:#6b6f76; --line:#e4e0d6; --accent:#1f4e79;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,sans-serif;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{background:var(--accent);color:#fff;padding:26px 0}
+h1{margin:0;font-size:26px;font-weight:900;letter-spacing:.03em}
+
+.years{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.years .wrap{display:flex;gap:2px;overflow-x:auto}
+.ytab{border:0;background:none;font:inherit;font-size:16px;padding:14px 18px 12px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;font-weight:500}
+.ytab.on{border-bottom-color:var(--accent);color:var(--accent);font-weight:700}
+.ytab .now{display:inline-block;font-size:11px;background:#ffe9a8;color:#7a5a00;border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:2px;font-weight:500}
+
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:20px 0 4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 16px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip.on[data-s]:not([data-s="全部"]){background:var(--cc);border-color:var(--cc)}
+.search{flex:1;min-width:200px;display:flex}
+.search input{width:100%;font:inherit;font-size:14px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+
+.term{margin:14px 0;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.term>summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.term>summary::-webkit-details-marker{display:none}
+.term>summary h2{font-size:19px;margin:0;flex:1}
+.term>summary .dots{display:flex;gap:5px}
+.term>summary .dots i{width:10px;height:10px;border-radius:50%;background:var(--cc)}
+.term>summary .arrow{color:var(--muted);font-size:13px;white-space:nowrap}
+.term[open]>summary .arrow::after{content:"收合 ▲"}
+.term:not([open])>summary .arrow::after{content:"展開 ▼"}
+.term>.grid{padding:0 20px 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;text-align:left;font:inherit;color:inherit;padding:0;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 6px 18px rgba(0,0,0,.09);transform:translateY(-2px)}
+.thumb{position:relative;aspect-ratio:16/9;background:var(--tc);display:flex;align-items:center;justify-content:center}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.play{position:relative;width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
+.play::after{content:"";border-left:15px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px}
+.card .body{padding:10px 14px 14px;display:flex;flex-direction:column;gap:6px}
+.tag{align-self:flex-start;background:var(--tc);color:var(--cc);font-weight:700;font-size:12px;border-radius:4px;padding:1px 8px}
+.card .t{font-size:15px;font-weight:500}
+mark{background:#fff1a6;padding:0}
+
+.series{grid-column:1/-1;background:var(--bg);border:1px solid var(--line);border-left:5px solid var(--cc);border-radius:12px}
+.series summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;gap:10px;align-items:center}
+.series summary::-webkit-details-marker{display:none}
+.series summary .t{font-weight:700;font-size:15px;flex:1}
+.series summary .arrow{color:var(--muted);font-size:13px;white-space:nowrap}
+.series[open] summary .arrow::after{content:"收合 ▲"}
+.series:not([open]) summary .arrow::after{content:"展開 ▼"}
+.series .eps{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:0 16px 16px}
+.series .eps .card .t{font-size:14px}
+
+.empty{color:var(--muted);padding:40px 0;text-align:center}
+
+/* 播放視窗 */
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,14,20,.82);display:none;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.player{width:min(1000px,100%)}
+.frame{position:relative;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.pinfo{color:#fff;display:flex;gap:12px;align-items:flex-start;margin-top:12px}
+.pinfo .t{flex:1;font-size:16px;font-weight:500}
+.pinfo a{color:#bcd3ea;font-size:13px;white-space:nowrap}
+.close{position:absolute;top:14px;right:18px;background:none;border:0;color:#fff;font-size:30px;cursor:pointer;line-height:1}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>【翰林國小線上研習回放影片】</h1></div></header>
+<nav class="years"><div class="wrap" id="years"></div></nav>
+<main class="wrap">
+  <div class="controls">
+    <div class="chips" id="subjects"></div>
+    <label class="search"><input id="q" type="search" placeholder="搜尋標題或講師"></label>
+  </div>
+  <div id="list"><div class="empty">載入中…</div></div>
+  <div style="height:60px"></div>
+</main>
+
+<div class="modal" id="modal">
+  <button class="close" id="close" aria-label="關閉">×</button>
+  <div class="player">
+    <div class="frame" id="frame"></div>
+    <div class="pinfo"><div class="t" id="ptitle"></div><a id="plink" href="#" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a></div>
+  </div>
+</div>
+
+<script>
+(async()=>{
+// 資料：videos.json 每天由 GitHub 自動更新；playlists.json 決定有哪些領域和順序
+const nc='?t='+Date.now();
+const [VIDEOS, PLAYLISTS] = await Promise.all([
+  fetch('videos.json'+nc).then(r=>r.json()),
+  fetch('playlists.json'+nc).then(r=>r.json()),
+]);
+const SUBJ = Object.keys(PLAYLISTS);
+const EMBED = true;              // true：在頁面內播放；false：另開 YouTube
+const THUMBS = true;             // 顯示 YouTube 縮圖
+
+// 科目顏色：[主色, 淺底色]。新科目沒列在這裡會自動從備用色挑一個
+const COLORS = {'國語':['#c0392b','#fbeceb'],'數學':['#1f6fb2','#e8f1fa'],'自然':['#2e8b57','#e7f4ec'],'社會':['#b9770e','#fbf2e2']};
+const SPARE = [['#7d3c98','#f3eaf7'],['#16a085','#e4f5f1'],['#d35400','#fcece2'],['#2c3e50','#e8ebee'],['#c2185b','#fbe6ee'],['#5d6d7e','#eef0f2']];
+let spareI=0; SUBJ.forEach(s=>{if(!COLORS[s]) COLORS[s]=SPARE[spareI++%SPARE.length]});
+const TERMS = ['下學期','寒假','上學期','暑假'];   // 由新到舊
+// 已公告的學年度日期：上學期開學、寒假開始、下學期開學（暑假自 7/1 起，下學期至 6/30）
+const KNOWN = {
+  115:{up:'08-31', win:'01-21', down:'02-11'},
+  114:{up:'09-01', win:'01-21', down:'02-23'},
+  113:{up:'08-30', win:'01-21', down:'02-11'},
+  112:{up:'08-30', win:'01-21', down:'02-16'},
+  111:{up:'08-30', win:'01-20', down:'02-13'},
+  110:{up:'09-01', win:'01-21', down:'02-11'},
+};
+const DEFAULT = {up:'09-01', win:'01-21', down:'02-11'};  // 未公告學年度先用法定原則，公告後補進 KNOWN
+
+function pad(n){return String(n).padStart(2,'0')}
+function today(){const d=new Date(Date.now()+8*3600e3);return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())}
+function classify(d){
+  const g=+d.slice(0,4), md=d.slice(5);
+  const y = md>='07-01' ? g-1911 : g-1912;          // 7/1 起算新學年
+  const c = KNOWN[y]||DEFAULT;
+  let term;
+  if(md>='07-01') term = md<c.up ? '暑假' : '上學期';
+  else term = md<c.win ? '上學期' : md<c.down ? '寒假' : '下學期';
+  return [y,term];
+}
+const TODAY=today(), CUR=classify(TODAY)[0];
+const YEARS=[0,1,2,3,4,5].map(i=>CUR-i);            // 近 6 個學年度
+const V=VIDEOS.map(([s,id,d,t])=>{const [y,term]=classify(d);return {s,id,d,t,y,term}}).filter(v=>YEARS.includes(v.y));
+
+let state={y:CUR,s:'全部',q:''};
+try{const h=location.hash.match(/^#y(\d{3})$/); if(h&&YEARS.includes(+h[1])) state.y=+h[1];}catch(e){}
+
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function hl(s){const e=esc(s); if(!state.q) return e; const q=esc(state.q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); return e.replace(new RegExp(q,'gi'),m=>`<mark>${m}</mark>`)}
+const css=s=>{const c=COLORS[s]||SPARE[0];return `--cc:${c[0]};--tc:${c[1]}`};
+function matches(v){
+  if(state.s!=='全部'&&v.s!==state.s) return false;
+  if(state.q&&!v.t.toLowerCase().includes(state.q.toLowerCase())) return false;
+  return true;
+}
+function seriesKey(v){
+  if(v.s!=='數學') return null;
+  const m=v.t.match(/^【([^】]+)】|^\[翰林\](.+?)-/); return m?(m[1]||m[2]):null;
+}
+const epNum=t=>{const m=t.match(/(?:Ep|CH)\.?\s*-?(\d+)/i);return m?+m[1]:999};
+
+function card(v,short){
+  const label=short?(v.t.replace(/^【[^】]+】\s*|^\[翰林\][^-]+-/,'')||v.t):v.t;
+  return `<button class="card" style="${css(v.s)}" data-id="${v.id}">
+    ${THUMBS?`<div class="thumb"><img loading="lazy" alt="" src="https://i.ytimg.com/vi/${v.id}/mqdefault.jpg" onerror="this.remove()"><span class="play"></span></div>`:''}
+    <div class="body">${short?'':`<span class="tag">${v.s}</span>`}<div class="t">${hl(label)}</div></div></button>`;
+}
+
+function render(){
+  document.getElementById('years').innerHTML=YEARS.map(y=>
+    `<button class="ytab ${y===state.y?'on':''}" data-y="${y}">${y} 學年度${y===CUR?'<span class="now">本學年</span>':''}</button>`).join('');
+  document.getElementById('subjects').innerHTML=['全部',...SUBJ].map(s=>
+    `<button class="chip ${state.s===s?'on':''}" data-s="${s}" style="${s!=='全部'?css(s):''}">${s}</button>`).join('');
+
+  let html='', first=true;
+  for(const term of TERMS){
+    const vids=V.filter(v=>v.y===state.y&&v.term===term&&matches(v))
+      .sort((a,b)=>b.d.localeCompare(a.d)||a.t.localeCompare(b.t,'zh-Hant',{numeric:true}));
+    if(!vids.length) continue;
+    const groups=new Map(), order=[];
+    for(const v of vids){const k=seriesKey(v);
+      if(k){const key=v.s+'|'+k; if(!groups.has(key)){groups.set(key,[]);order.push({key})} groups.get(key).push(v);} else order.push({v});}
+    const subs=SUBJ.filter(s=>vids.some(v=>v.s===s));
+    html+=`<details class="term" ${first||state.q?'open':''}><summary><h2>${state.y}${term}</h2><span class="dots">${subs.map(s=>`<i style="${css(s)}" title="${s}"></i>`).join('')}</span><span class="arrow"></span></summary><div class="grid">`;
+    first=false;
+    for(const o of order){
+      if(o.v){html+=card(o.v);continue}
+      const g=groups.get(o.key);
+      if(g.length<3){g.forEach(v=>html+=card(v));continue}
+      g.sort((a,b)=>epNum(a.t)-epNum(b.t)||a.t.localeCompare(b.t,'zh-Hant',{numeric:true}));
+      html+=`<details class="series" style="${css(g[0].s)}" ${state.q?'open':''}><summary><span class="tag">${g[0].s}</span><span class="t">${hl(o.key.split('|')[1])}</span><span class="arrow"></span></summary><div class="eps">${g.map(v=>card(v,true)).join('')}</div></details>`;
+    }
+    html+='</div></details>';
+  }
+  document.getElementById('list').innerHTML=html||`<div class="empty">${state.q?'找不到符合的影片':'這個學年度還沒有影片'}</div>`;
+}
+
+// 播放
+const modal=document.getElementById('modal'), frame=document.getElementById('frame');
+function openVideo(id){
+  const v=V.find(x=>x.id===id); const yt='https://www.youtube.com/watch?v='+id;
+  if(!EMBED){window.open(yt,'_blank');return}
+  frame.innerHTML=`<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+  document.getElementById('ptitle').textContent=v?v.t:'';
+  document.getElementById('plink').href=yt;
+  modal.classList.add('open');
+}
+function closeVideo(){modal.classList.remove('open');frame.innerHTML=''}
+document.getElementById('close').onclick=closeVideo;
+modal.addEventListener('click',e=>{if(e.target===modal)closeVideo()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeVideo()});
+
+document.getElementById('list').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)openVideo(c.dataset.id)});
+document.getElementById('years').addEventListener('click',e=>{const b=e.target.closest('[data-y]');if(!b)return;state.y=+b.dataset.y;try{location.hash='y'+state.y}catch(_){}render()});
+document.getElementById('subjects').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(!b)return;state.s=b.dataset.s;render()});
+document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value.trim();render()});
+render();
+})();
+</script>
+</body>
+</html>
